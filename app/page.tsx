@@ -1,26 +1,37 @@
-// File: app/page.tsx
-
-// 1. Các Component có sẵn của mẫu (Thường dùng export function -> Cần ngoặc nhọn)
 import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import { Hero } from "@/components/hero"
 import { Categories } from "@/components/categories"
-import { HowItWorks } from "@/components/how-it-works"
-import { Footer } from "@/components/footer"
-
-// 2. Component mình mới viết (Dùng export default -> KHÔNG ngoặc nhọn)
 import FeaturedGigs from "@/components/featured-gigs"
+import { HowItWorks } from "@/components/how-it-works"
+import { Testimonials } from "@/components/testimonials" // Mới
+import { CTABanner } from "@/components/cta-banner"     // Mới
 
-export default function HomePage() {
+export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white font-sans selection:bg-[#1dbf73]/30">
       <Header />
+      
       <main>
+        {/* 1. HERO */}
         <Hero />
+        
+        {/* 2. CATEGORIES */}
         <Categories />
-        {/* Component 5.pi Gigs nằm ở đây */}
+
+        {/* 3. FEATURED GIGS */}
         <FeaturedGigs />
+
+        {/* 4. HOW IT WORKS */}
         <HowItWorks />
+        
+        {/* 5. TESTIMONIALS*/}
+        <Testimonials />
+
+        {/* 6. CTA BANNER*/}
+        <CTABanner />
       </main>
+
       <Footer />
     </div>
   )

@@ -7,6 +7,8 @@ const GigSchema = new Schema(
     price: { type: Number, required: true },
     category: { type: String, required: true },
     image: { type: String, default: "/placeholder.svg" }, // Ảnh mặc định nếu không up
+    gallery: { type: [String], default: [] }, 
+    images: [{ type: String }],
     seller: {
       username: { type: String, required: true },
       // Sau này có thể lưu thêm uid, avatar...

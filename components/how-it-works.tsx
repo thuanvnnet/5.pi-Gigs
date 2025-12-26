@@ -1,50 +1,56 @@
-import { Search, MessageSquare, Wallet } from "lucide-react"
+import { UserPlus, Search, CreditCard, ShieldCheck } from "lucide-react"
 
-const steps = [
-  {
-    icon: Search,
-    title: "Find the Perfect Gig",
-    description: "Browse thousands of gigs from talented Pi users. Filter by category, price, and ratings.",
+const STEPS = [
+  { 
+    title: "Create Account", 
+    desc: "Join the Pi Network community and setup your profile for free.", 
+    icon: UserPlus 
   },
-  {
-    icon: MessageSquare,
-    title: "Connect & Collaborate",
-    description: "Message sellers directly. Discuss requirements, timelines, and custom requests.",
+  { 
+    title: "Find Services", 
+    desc: "Search for gigs or browse categories to find exactly what you need.", 
+    icon: Search 
   },
-  {
-    icon: Wallet,
-    title: "Pay with Pi",
-    description: "Secure transactions with Pi cryptocurrency. Funds held in escrow until delivery.",
+  { 
+    title: "Pay with Pi", 
+    desc: "Secure payment using Pi Coin. Funds are held in Escrow until you are satisfied.", 
+    icon: CreditCard 
   },
+  { 
+    title: "Get Work Done", 
+    desc: "Receive files, approve delivery, and leave a 5-star review for the seller.", 
+    icon: ShieldCheck 
+  }
 ]
 
 export function HowItWorks() {
   return (
-    <section className="py-12 md:py-16">
+    <section className="py-20 bg-gray-50 border-t border-gray-100">
       <div className="container mx-auto px-4">
-        <div className="mb-12 text-center">
-          <h2 className="text-balance mb-4 text-2xl font-bold text-foreground md:text-3xl">How It Works</h2>
-          <p className="text-pretty mx-auto max-w-2xl text-muted-foreground">
-            Get started in minutes. Join thousands of Pi users already using 5.pi Gigs.
+        {/* HEADER */}
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
+          <p className="text-gray-500 text-lg">
+            Getting work done on 5.pi Gigs is simple, safe, and powered by the Pi Network blockchain.
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-3">
-          {steps.map((step, index) => {
-            const Icon = step.icon
-            return (
-              <div key={index} className="relative flex flex-col items-center text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                  <Icon className="h-8 w-8" />
-                </div>
-                <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                  {index + 1}
-                </div>
-                <h3 className="text-balance mb-2 text-xl font-semibold text-foreground">{step.title}</h3>
-                <p className="text-pretty text-muted-foreground">{step.description}</p>
+        {/* STEPS GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {STEPS.map((step, index) => (
+            <div key={index} className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm text-center hover:-translate-y-2 transition-transform duration-300 hover:shadow-md">
+              {/* Icon Circle */}
+              <div className="w-16 h-16 bg-[#1dbf73]/10 text-[#1dbf73] rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <step.icon className="w-8 h-8" />
               </div>
-            )
-          })}
+              
+              {/* Content */}
+              <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
+              <p className="text-gray-500 leading-relaxed">
+                {step.desc}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </section>

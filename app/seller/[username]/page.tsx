@@ -1,152 +1,184 @@
 "use client"
 
+import { use, useEffect, useState } from "react" // 👈 Import 'use' để sửa lỗi params
+import Link from "next/link"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { MapPin, User, Calendar, Star, CheckCircle2 } from "lucide-react"
+import { MapPin, Star, Calendar, MessageCircle, CheckCircle2 } from "lucide-react"
 
-// Dữ liệu giả lập các dịch vụ của người bán này
-const SELLER_GIGS = [
-  { id: 1, title: "Cài Node Pi & Docker trọn gói", price: 5, rating: 5.0, image: "/placeholder.svg" },
-  { id: 5, title: "Tư vấn cấu hình PC chạy Node", price: 2, rating: 4.9, image: "/placeholder.svg" },
-]
+// Định nghĩa kiểu dữ liệu cho props
+interface PageProps {
+  params: Promise<{ username: string }>
+}
 
-export default function SellerProfile({ params }: { params: { username: string } }) {
-  // Lấy username từ URL (đã decode để hiển thị đẹp)
-  const username = decodeURIComponent(params.username)
+export default function SellerProfile({ params }: PageProps) {
+  // 🛠 SỬA LỖI: Dùng use() để lấy username từ Promise params
+  const { username } = use(params) 
+
+  const [gigs, setGigs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Giả lập thông tin User (Sau này lấy từ API User)
+  const sellerInfo = {
+    username: decodeURIComponent(username), // Giải mã %20 nếu có
+    level: "Level 1 Seller",
+    avatar: username.charAt(0).toUpperCase(),
+    bio: "Professional Developer & Pi Network Enthusiast. I have 5 years of experience in Web3 and Blockchain integration.",
+    from: "Vietnam",
+    memberSince: "Dec 2024",
+    avgResponse: "1 Hour",
+    languages: ["English", "Vietnamese"]
+  }
+
+  useEffect(() => {
+    const fetchSellerGigs = async () => {
+      try {
+        // Gọi API lấy toàn bộ Gigs, sau đó lọc theo username
+        // (Tốt nhất là backend nên hỗ trợ lọc: /api/gigs?seller=username)
+        const res = await fetch("/api/gigs?sort=newest")
+        const data = await res.json()
+        
+        if (data.success) {
+          // Lọc ra các bài của người này
+          const userGigs = data.data.filter((g: any) => g.seller?.username === sellerInfo.username)
+          setGigs(userGigs)
+        }
+      } catch (error) {
+        console.error("Error fetching gigs", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (username) {
+      fetchSellerGigs()
+    }
+  }, [username])
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
+    <div className="min-h-screen bg-gray-50 font-sans">
       <Header />
-
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* CỘT TRÁI: THÔNG TIN CÁ NHÂN */}
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center relative overflow-hidden">
-              {/* Badge Online */}
-              <div className="absolute top-4 right-4 flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-200">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                Online
-              </div>
-
-              <div className="w-24 h-24 bg-[#1dbf73]/10 text-[#1dbf73] rounded-full mx-auto flex items-center justify-center text-4xl mb-4 border-4 border-white shadow-sm">
-                {username.charAt(0).toUpperCase()}
-              </div>
+          {/* === CỘT TRÁI: THÔNG TIN SELLER (Profile Card) === */}
+          <div className="lg:col-span-4">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm sticky top-24">
               
-              <h1 className="text-xl font-bold text-gray-900 mb-1">{username}</h1>
-              <p className="text-gray-500 text-sm mb-4">Lập trình viên & Pi Node Expert</p>
+              {/* Avatar & Status */}
+              <div className="flex flex-col items-center text-center mb-6">
+                <div className="relative mb-4">
+                  <div className="w-32 h-32 bg-gradient-to-tr from-[#1dbf73] to-emerald-500 rounded-full flex items-center justify-center text-5xl font-bold text-white shadow-lg">
+                    {sellerInfo.avatar}
+                  </div>
+                  <div className="absolute bottom-1 right-1 w-6 h-6 bg-green-500 border-4 border-white rounded-full"></div>
+                </div>
+                
+                <h1 className="text-2xl font-bold text-gray-900">{sellerInfo.username}</h1>
+                <p className="text-gray-500 text-sm font-medium mb-2">{sellerInfo.level}</p>
+                
+                <div className="flex gap-1 mb-4">
+                   {[1, 2, 3, 4, 5].map((s) => (
+                     <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                   ))}
+                   <span className="text-gray-400 text-xs font-bold ml-1">(5.0)</span>
+                </div>
 
-              <div className="flex justify-center mb-6">
-                <Button className="w-full bg-[#1dbf73] hover:bg-[#1dbf73]/90 text-white font-bold">
-                  Liên hệ
+                <Button className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold">
+                  Contact Me
                 </Button>
               </div>
 
-              <div className="border-t border-gray-100 pt-4 text-left space-y-3 text-sm text-gray-600">
-                <div className="flex justify-between">
-                  <span className="flex items-center gap-2"><MapPin className="w-4 h-4"/> Đến từ</span>
-                  <span className="font-bold text-gray-900">Việt Nam</span>
+              <div className="border-t border-gray-100 py-6 space-y-4">
+                <div className="flex justify-between text-sm">
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <MapPin className="w-4 h-4" /> From
+                  </div>
+                  <span className="font-bold text-gray-700">{sellerInfo.from}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="flex items-center gap-2"><User className="w-4 h-4"/> Thành viên từ</span>
-                  <span className="font-bold text-gray-900">Tháng 12/2024</span>
+                <div className="flex justify-between text-sm">
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <Calendar className="w-4 h-4" /> Member since
+                  </div>
+                  <span className="font-bold text-gray-700">{sellerInfo.memberSince}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="flex items-center gap-2"><Calendar className="w-4 h-4"/> Giao gần nhất</span>
-                  <span className="font-bold text-gray-900">2 giờ trước</span>
+                <div className="flex justify-between text-sm">
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <MessageCircle className="w-4 h-4" /> Avg. Response
+                  </div>
+                  <span className="font-bold text-gray-700">{sellerInfo.avgResponse}</span>
                 </div>
               </div>
-            </div>
 
-            {/* Box Kỹ năng */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <h3 className="font-bold text-gray-900 mb-4">Kỹ năng</h3>
-              <div className="flex flex-wrap gap-2">
-                {["Pi Node", "Docker", "Linux", "IT Support", "English"].map(skill => (
-                  <span key={skill} className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
-                    {skill}
-                  </span>
-                ))}
+              <div className="border-t border-gray-100 pt-6">
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  {sellerInfo.bio}
+                </p>
               </div>
+
             </div>
           </div>
 
-          {/* CỘT PHẢI: DANH SÁCH GIG & GIỚI THIỆU */}
-          <div className="lg:col-span-2 space-y-8">
-            
-            {/* Giới thiệu */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Giới thiệu</h2>
-              <p className="text-gray-600 leading-relaxed">
-                Xin chào, mình là {username}. Mình là một Pioneer tâm huyết và có 5 năm kinh nghiệm làm việc trong lĩnh vực IT System Admin.
-                <br/><br/>
-                Mình chuyên nhận cài đặt, sửa lỗi Pi Node và hướng dẫn chạy Docker tối ưu nhất. Cam kết hỗ trợ nhiệt tình cho anh em cộng đồng Pi Network Việt Nam.
-              </p>
-            </div>
+          {/* === CỘT PHẢI: DANH SÁCH GIGS === */}
+          <div className="lg:col-span-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">
+              {sellerInfo.username}'s Gigs
+            </h2>
 
-            {/* Danh sách Gig đang bán */}
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Dịch vụ của {username}</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {SELLER_GIGS.map((gig) => (
-                  <div key={gig.id} className="group relative overflow-hidden rounded-lg border bg-white shadow-sm transition-all hover:shadow-md flex flex-col">
-                    <Link href={`/gigs/${gig.id}`} className="block overflow-hidden">
-                      <div className="aspect-[4/3] bg-gray-100 relative group-hover:opacity-90 transition">
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 bg-[#1dbf73]/10">
-                            LOGO
+            {loading ? (
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {[1, 2].map((i) => <div key={i} className="h-64 bg-gray-200 rounded-xl animate-pulse"></div>)}
+               </div>
+            ) : gigs.length === 0 ? (
+               <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
+                 <p className="text-gray-400">No active gigs found.</p>
+               </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {gigs.map((gig) => (
+                  <Link href={`/gigs/${gig._id}`} key={gig._id} className="group block h-full">
+                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 h-full flex flex-col">
+                      {/* Ảnh bìa */}
+                      <div className="aspect-[16/10] bg-gray-100 relative overflow-hidden">
+                        {gig.image ? (
+                          <img 
+                            src={gig.image} 
+                            alt={gig.title} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-50">NO IMAGE</div>
+                        )}
+                      </div>
+
+                      {/* Nội dung */}
+                      <div className="p-4 flex flex-col flex-grow">
+                        <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-[#1dbf73] transition-colors mb-2">
+                          {gig.title}
+                        </h3>
+                        
+                        <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-50">
+                          <div className="flex items-center gap-1">
+                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                            <span className="text-xs font-bold text-gray-700">{gig.rating || "New"}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-gray-400 uppercase font-bold block">Starting at</span>
+                            <span className="text-lg font-extrabold text-[#1dbf73]">{gig.price} π</span>
+                          </div>
                         </div>
                       </div>
-                    </Link>
-
-                    <div className="p-4 flex flex-col flex-grow">
-                      <Link href={`/gigs/${gig.id}`}>
-                        <h3 className="font-semibold text-base leading-tight mb-2 hover:text-[#1dbf73] transition cursor-pointer line-clamp-2">
-                            {gig.title}
-                        </h3>
-                      </Link>
-                      <div className="flex justify-between items-center mt-auto">
-                          <span className="text-yellow-500 font-bold flex items-center text-sm">★ {gig.rating}</span>
-                          <span className="text-[#1dbf73] font-bold text-lg">{gig.price} π</span>
-                      </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
-            </div>
-
-            {/* Đánh giá từ khách hàng */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-               <div className="flex items-center gap-2 mb-6">
-                 <h2 className="text-lg font-bold text-gray-900">Đánh giá từ khách hàng</h2>
-                 <span className="text-yellow-500 font-bold text-lg">★ 5.0</span>
-                 <span className="text-gray-400 text-sm">(124 đánh giá)</span>
-               </div>
-               
-               <div className="space-y-6">
-                 {[1, 2].map((review) => (
-                   <div key={review} className="border-b border-gray-100 last:border-0 pb-6 last:pb-0">
-                     <div className="flex items-center gap-3 mb-2">
-                       <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">K</div>
-                       <div>
-                         <div className="font-bold text-sm">KhachHang_{review}</div>
-                         <div className="text-xs text-gray-400">1 tuần trước</div>
-                       </div>
-                     </div>
-                     <p className="text-gray-600 text-sm">
-                       "Dịch vụ rất tốt, bác chủ nhiệt tình cài đặt qua Ultraviewer nhanh gọn. Node chạy bon bon!"
-                     </p>
-                   </div>
-                 ))}
-               </div>
-            </div>
-
+            )}
           </div>
+
         </div>
       </main>
-
       <Footer />
     </div>
   )
