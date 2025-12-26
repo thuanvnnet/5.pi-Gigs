@@ -8,5 +8,7 @@ echo "# ﻿5.pi Gigs" >> README.md
 git add .
 git commit -m "Done Search and Filter"
 git push
+npm run dev
 ```
+
 
