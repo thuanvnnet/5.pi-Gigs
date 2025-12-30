@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
+import Image from "next/image"
 import { ImageIcon, Maximize2 } from "lucide-react"
 
 interface GigGalleryProps {
@@ -10,35 +11,37 @@ interface GigGalleryProps {
 }
 
 export function GigGallery({ title, mainImage, gallery = [] }: GigGalleryProps) {
-  // GỘP ẢNH: Ảnh bìa đứng đầu, sau đó đến gallery
-  // filter(Boolean) để loại bỏ giá trị null/undefined/rỗng
-  const [allImages, setAllImages] = useState<string[]>([])
-  const [selectedImage, setSelectedImage] = useState("")
+  // 1. Tính toán danh sách ảnh từ props. `useMemo` giúp tối ưu, chỉ tính toán lại khi props thay đổi.
+  const allImages = useMemo(() => {
+    // Đảm bảo gallery luôn là một mảng và lọc ra các URL không hợp lệ một cách tường minh
+    const images = [mainImage, ...(gallery || [])]
+      .filter((img): img is string => typeof img === 'string' && img.trim() !== '');
+    return images.length > 0 ? images : ["/placeholder.svg"];
+  }, [mainImage, gallery]);
 
+  // 2. Chỉ quản lý `index` của ảnh được chọn, thay vì cả URL.
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  // 3. Effect này đảm bảo `selectedIndex` luôn hợp lệ, ngay cả khi danh sách ảnh thay đổi (ví dụ: sau khi tải dữ liệu).
   useEffect(() => {
-    const images = [mainImage, ...gallery].filter((img): img is string => !!img);
-    if (images.length === 0) {
-        setAllImages(["/placeholder.svg"])
-        setSelectedImage("/placeholder.svg")
-    } else {
-        setAllImages(images)
-        setSelectedImage(images[0])
+    if (selectedIndex >= allImages.length) {
+      setSelectedIndex(0);
     }
-  }, [mainImage, gallery])
+  }, [allImages, selectedIndex]);
+
+  // 4. Ảnh được chọn hiện tại được suy ra từ `allImages` và `selectedIndex`.
+  const selectedImage = allImages[selectedIndex];
 
   const [isAnimating, setIsAnimating] = useState(false)
 
-  const handleSelectImage = (img: string) => {
-    if (img === selectedImage) return
+  const handleSelectImage = (index: number) => {
+    if (index === selectedIndex) return
     setIsAnimating(true)
     setTimeout(() => {
-      setSelectedImage(img)
+      setSelectedIndex(index)
       setIsAnimating(false)
     }, 200)
   }
-
-  // Nếu chưa có ảnh (đang load), hiện khung trống
-  if (!selectedImage) return <div className="aspect-video bg-gray-100 rounded-2xl animate-pulse" />
 
   return (
     <div className="space-y-4">
@@ -51,10 +54,11 @@ export function GigGallery({ title, mainImage, gallery = [] }: GigGalleryProps) 
         </div>
 
         {selectedImage !== "/placeholder.svg" ? (
-          <img 
+          <Image 
+            fill
             src={selectedImage} 
             alt={title} 
-            className={`w-full h-full object-cover transition-all duration-300 ease-in-out transform hover:scale-105 cursor-pointer
+            className={`object-cover transition-all duration-300 ease-in-out transform hover:scale-105 cursor-pointer
               ${isAnimating ? "opacity-50 blur-sm scale-95" : "opacity-100 blur-0 scale-100"}
             `}
           />
@@ -71,16 +75,16 @@ export function GigGallery({ title, mainImage, gallery = [] }: GigGalleryProps) 
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {allImages.map((img, index) => (
             <div 
-              key={index}
-              onClick={() => handleSelectImage(img)}
+              key={img} // Sử dụng URL của ảnh làm key để đảm bảo tính duy nhất và ổn định
+              onClick={() => handleSelectImage(index)}
               className={`
                 relative flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden cursor-pointer transition-all duration-300 border
-                ${selectedImage === img 
+                ${selectedIndex === index 
                   ? "border-[#1dbf73] ring-2 ring-[#1dbf73]/20 opacity-100 scale-105" 
                   : "border-transparent opacity-60 hover:opacity-100 hover:scale-105"}
               `}
             >
-               <img src={img} alt={`Thumb ${index}`} className="w-full h-full object-cover" />
+               <Image fill src={img} alt={`Thumb ${index}`} className="object-cover" />
             </div>
           ))}
         </div>

@@ -1,9 +1,25 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
+
+// Định nghĩa các trạng thái có thể có của đơn hàng
+export type OrderStatus = 'created' | 'in_progress' | 'delivered' | 'completed' | 'disputed' | 'cancelled';
+
+export interface IOrder extends Document {
+  gigId: mongoose.Types.ObjectId;
+  gigTitle: string;
+  gigImage: string;
+  buyerId: string;
+  sellerId: string;
+  price: number;
+  status: OrderStatus;
+  deliveryFile?: string;
+  deliveryNote?: string;
+  // ... các trường khác
+}
 
 const OrderSchema = new Schema(
   {
     // Thông tin cơ bản
-    gigId: { type: String, required: true },
+    gigId: { type: Schema.Types.ObjectId, ref: 'Gig', required: true },
     gigTitle: { type: String, required: true },
     gigImage: { type: String }, 
     buyerId: { type: String, required: true },
@@ -40,5 +56,5 @@ const OrderSchema = new Schema(
   { timestamps: true }
 );
 
-const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);
+const Order = mongoose.models.Order || mongoose.model<IOrder>("Order", OrderSchema);
 export default Order;

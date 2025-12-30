@@ -35,16 +35,12 @@ export function ReviewsSection({ gigId, sellerId }: { gigId: string, sellerId: s
 
     setLoading(true)
     try {
-      // Fake Order ID for testing (In production, you must check real orders)
-      const fakeOrderId = "694d0a2dbef63d7afd4edf" + Math.floor(Math.random() * 1000); 
-
       const res = await fetch("/api/reviews", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           gigId,
-          orderId: fakeOrderId, 
-          buyerId: user.username,
-          sellerId,
+          // Backend sẽ tự động tìm đơn hàng hợp lệ
           star: rating,
           comment
         })
@@ -54,7 +50,7 @@ export function ReviewsSection({ gigId, sellerId }: { gigId: string, sellerId: s
       if (data.success) {
         toast.success("Review submitted successfully!")
         // Update list immediately
-        setReviews([{ star: rating, comment, buyerId: user.username, createdAt: new Date() }, ...reviews])
+        setReviews([data.data, ...reviews])
         setComment("")
       } else {
         toast.error(data.error || "Something went wrong")
@@ -66,40 +62,39 @@ export function ReviewsSection({ gigId, sellerId }: { gigId: string, sellerId: s
     }
   }
 
+  // Người bán không thể tự đánh giá sản phẩm của mình
+  const isSeller = user?.uid === sellerId;
+
   return (
     <div className="mt-12 border-t border-gray-100 pt-10">
       <h3 className="text-2xl font-bold mb-6 text-gray-900">Reviews ({reviews.length})</h3>
 
       {/* --- WRITE REVIEW FORM --- */}
-      <div className="bg-gray-50 p-6 rounded-xl mb-10 border border-gray-200">
-        <h4 className="font-semibold mb-4 text-gray-800">Write a Review</h4>
-        
-        {/* Star Selection */}
-        <div className="flex gap-1 mb-4">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Star 
-              key={star}
-              className={`w-6 h-6 cursor-pointer transition-colors ${star <= rating ? "fill-amber-400 text-amber-400" : "text-gray-300"}`}
-              onClick={() => setRating(star)}
-            />
-          ))}
+      {!isSeller && (
+        <div className="bg-gray-50 p-6 rounded-xl mb-10 border border-gray-200">
+          <h4 className="font-semibold mb-4 text-gray-800">Write a Review</h4>
+          
+          {/* Star Selection */}
+          <div className="flex gap-1 mb-4">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star 
+                key={star}
+                className={`w-6 h-6 cursor-pointer transition-colors ${star <= rating ? "fill-amber-400 text-amber-400" : "text-gray-300"}`}
+                onClick={() => setRating(star)}
+              />
+            ))}
+          </div>
+          <Textarea 
+            placeholder="Share your experience with this seller..."
+            className="bg-white mb-4 resize-none h-24"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+          />
+          <Button onClick={handleSubmit} disabled={loading} className="bg-[#1dbf73] hover:bg-[#1dbf73]/90 text-white font-bold">
+            {loading ? "Submitting..." : "Submit Review"}
+          </Button>
         </div>
-
-        <Textarea 
-          placeholder="Share your experience with this seller..."
-          className="bg-white mb-4 resize-none h-24"
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-        />
-        
-        <Button 
-          onClick={handleSubmit} 
-          disabled={loading}
-          className="bg-[#1dbf73] hover:bg-[#1dbf73]/90 text-white font-bold"
-        >
-          {loading ? "Submitting..." : "Submit Review"}
-        </Button>
-      </div>
+      )}
 
       {/* --- REVIEWS LIST --- */}
       <div className="space-y-8">

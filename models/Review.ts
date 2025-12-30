@@ -1,20 +1,26 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
-const ReviewSchema = new Schema(
+export interface IReview extends Document {
+  gigId: mongoose.Types.ObjectId;
+  orderId: mongoose.Types.ObjectId;
+  buyerId: string;
+  sellerId: string;
+  star: number;
+  comment: string;
+}
+
+const ReviewSchema: Schema = new Schema(
   {
-    gigId: { type: mongoose.Schema.Types.ObjectId, ref: "Gig", required: true },
-    orderId: { type: String, required: true }, // ID đơn hàng
-    buyerId: { type: String, required: true }, // Username người mua
-    sellerId: { type: String, required: true }, // Username người bán
-    
-    star: { type: Number, required: true, min: 1, max: 5 }, // 1 đến 5 sao
-    comment: { type: String, required: true },
+    gigId: { type: Schema.Types.ObjectId, ref: 'Gig', required: true },
+    orderId: { type: Schema.Types.ObjectId, ref: 'Order', required: true, unique: true }, // Một đơn hàng chỉ được đánh giá một lần
+    buyerId: { type: String, required: true }, // Lưu UID của người mua
+    sellerId: { type: String, required: true }, // Lưu UID của người bán
+    star: { type: Number, required: true, min: 1, max: 5 },
+    comment: { type: String, required: true, trim: true, maxlength: 1000 },
   },
   { timestamps: true }
 );
 
-// Mỗi đơn hàng chỉ được review 1 lần
-ReviewSchema.index({ orderId: 1 }, { unique: true });
+const Review = mongoose.models.Review || mongoose.model<IReview>("Review", ReviewSchema);
 
-const Review = mongoose.models.Review || mongoose.model("Review", ReviewSchema);
 export default Review;

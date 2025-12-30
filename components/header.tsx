@@ -38,7 +38,7 @@ export function Header() {
              </Button>
           )}
 
-          <Link href="/create-gig">
+          <Link href="/create">
             <Button size="sm" className="bg-[#1dbf73] hover:bg-[#1dbf73]/90 text-white font-bold">
               Post a Gig
             </Button>
@@ -68,7 +68,7 @@ export function Header() {
                   <LayoutDashboard className="w-5 h-5 mr-3 text-[#1dbf73]" /> Dashboard
                 </div>
               </Link>
-              <Link href="/create-gig" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link href="/create" onClick={() => setIsMobileMenuOpen(false)}>
                 <div className="flex items-center p-3 rounded-lg hover:bg-gray-50 text-gray-700 font-medium">
                   <PlusCircle className="w-5 h-5 mr-3 text-[#1dbf73]" /> Post a Gig
                 </div>
