@@ -17,7 +17,7 @@ export function Header() {
         {/* 1. LOGO */}
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2">
-             <img src="/logo5pi.png" alt="Logo" className="h-9 w-auto object-contain" />
+             <img src="/logo.svg" alt="Logo" className="h-9 w-auto object-contain" />
           </Link>
         </div>
 

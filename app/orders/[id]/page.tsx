@@ -13,12 +13,13 @@ import { toast } from "sonner"
 import { usePiAuth } from "@/hooks/use-pi-auth"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { IOrder } from "@/models/Order" // Import the IOrder interface
 
 export default function OrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { user } = usePiAuth()
   
-  const [order, setOrder] = useState<any>(null)
+  const [order, setOrder] = useState<IOrder | null>(null)
   const [loading, setLoading] = useState(true)
   
   // Form states
@@ -38,15 +39,21 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
   const fetchOrder = async () => {
     try {
       const res = await fetch(`/api/orders/${id}`)
+      if (!res.ok) {
+        // If response is not OK, throw an error to be caught by the catch block
+        throw new Error(`Failed to fetch order: ${res.statusText}`);
+      }
       const data = await res.json()
       if (data.success) {
         setOrder(data.data)
         if (data.data.status === "delivered" && data.data.autoCompleteAt) {
            calculateTimeLeft(new Date(data.data.autoCompleteAt))
         }
+      } else {
+        toast.error(data.error || "Could not load order details.");
       }
     } catch (error) {
-      console.error("Error", error)
+      console.error("Error fetching order:", error)
     } finally {
       setLoading(false)
     }
@@ -71,9 +78,11 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
   }
 
   useEffect(() => {
-    if (order?.status === "delivered" && order?.autoCompleteAt) {
-      const timer = setInterval(() => calculateTimeLeft(new Date(order.autoCompleteAt)), 10000)
-      return () => clearInterval(timer)
+    if (order?.status === "delivered" && order.autoCompleteAt) {
+      const targetDate = new Date(order.autoCompleteAt);
+      calculateTimeLeft(targetDate); // Initial call to display time immediately
+      const timer = setInterval(() => calculateTimeLeft(targetDate), 10000);
+      return () => clearInterval(timer); // Cleanup on unmount
     }
   }, [order])
 
@@ -87,15 +96,27 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       })
+      if (!res.ok) {
+        let errorMsg = "Action failed.";
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch (e) {
+          errorMsg = `Request failed: ${res.statusText}`;
+        }
+        throw new Error(errorMsg);
+      }
       const data = await res.json()
       if (data.success) {
         toast.success("Updated successfully!")
         fetchOrder()
         setActiveForm(null)
         setReasonInput("")
+      } else {
+        throw new Error(data.error || "An unknown error occurred.");
       }
     } catch (err) {
-      toast.error("Connection Error")
+      toast.error((err as Error).message || "Connection Error");
     } finally {
       setActionLoading(false)
     }
@@ -125,7 +146,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-gray-400 text-sm font-medium">Order #{order._id.slice(0, 8)}</span>
+                <span className="text-gray-400 text-sm font-medium">Order #{order._id.toString().slice(0, 8)}</span>
                 <span className={`text-xs px-2 py-0.5 rounded-full uppercase tracking-wider font-bold border
                   ${order.status === 'completed' ? 'bg-green-100 text-green-700 border-green-200' : 
                     order.status === 'disputed' ? 'bg-red-100 text-red-700 border-red-200' :
@@ -226,6 +247,11 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
                        </div>
                        <h3 className="font-bold text-xl text-gray-900">Seller is working hard...</h3>
                        <p className="text-gray-500 mt-2">Expect delivery soon. You will be notified via email/app.</p>
+                       {order.expectedDeliveryAt && (
+                         <p className="text-sm text-gray-400 mt-4">
+                           Expected delivery by: <span className="font-semibold text-gray-500">{new Date(order.expectedDeliveryAt).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                         </p>
+                       )}
                     </div>
                   )}
                   {isSeller && (

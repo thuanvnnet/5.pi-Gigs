@@ -46,8 +46,13 @@ export function ImageUploader({
           body: file,
         }).then(async (res) => {
           if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || `Failed to upload ${file.name}`);
+            // Handle non-JSON error responses gracefully
+            try {
+              const errorData = await res.json();
+              throw new Error(errorData.message || `Failed to upload ${file.name}`);
+            } catch (e) {
+              throw new Error(`Upload failed with status: ${res.status}`);
+            }
           }
           return res.json();
         })

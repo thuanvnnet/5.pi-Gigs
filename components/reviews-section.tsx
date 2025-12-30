@@ -18,11 +18,14 @@ export function ReviewsSection({ gigId, sellerId }: { gigId: string, sellerId: s
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const res = await fetch(`/api/reviews?gigId=${gigId}`)
-        const data = await res.json()
-        if (data.success) setReviews(data.data)
+        const res = await fetch(`/api/reviews?gigId=${gigId}`);
+        if (!res.ok) {
+          throw new Error(`Failed to fetch reviews: ${res.statusText}`);
+        }
+        const data = await res.json();
+        if (data.success) setReviews(data.data);
       } catch (error) {
-        console.error("Failed to load reviews")
+        console.error("Failed to load reviews:", error);
       }
     }
     fetchReviews()
@@ -46,6 +49,18 @@ export function ReviewsSection({ gigId, sellerId }: { gigId: string, sellerId: s
         })
       })
 
+      if (!res.ok) {
+        let errorMsg = "Failed to submit review.";
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch (e) {
+          // Response was not JSON, use the status text if available
+          errorMsg = res.statusText || errorMsg;
+        }
+        throw new Error(errorMsg);
+      }
+
       const data = await res.json()
       if (data.success) {
         toast.success("Review submitted successfully!")
@@ -53,10 +68,10 @@ export function ReviewsSection({ gigId, sellerId }: { gigId: string, sellerId: s
         setReviews([data.data, ...reviews])
         setComment("")
       } else {
-        toast.error(data.error || "Something went wrong")
+        throw new Error(data.error || "Something went wrong");
       }
     } catch (err) {
-      toast.error("Connection error")
+      toast.error((err as Error).message || "An unknown error occurred.");
     } finally {
       setLoading(false)
     }

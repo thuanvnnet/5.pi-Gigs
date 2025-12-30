@@ -7,6 +7,7 @@ import Gig from "@/models/Gig"
 import Category from "@/models/Category"
 import { notFound } from "next/navigation"
 import { SlidersHorizontal } from "lucide-react"
+import { ChevronRight, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { GigCard } from "@/components/gig/GigCard"
 import { processGigsForClient, LeanGig } from "@/lib/gig-utils";
@@ -69,8 +70,13 @@ export default async function CategoryPage({ params }: { params: { slug: string 
       {/* Hero Section */}
       <section className="bg-gray-100 border-b">
         <div className="container mx-auto px-4 py-8 sm:py-12 text-center">
-          <div className="text-sm text-gray-500 mb-4">
-            <Link href="/" className="hover:text-[#1dbf73]">Home</Link> &gt; <span className="text-gray-900 font-medium">{category.name}</span>
+          {/* Breadcrumb */}
+          <div className="flex items-center justify-center gap-2 text-sm mb-4">
+            <Link href="/" className="text-gray-500 hover:text-[#1dbf73] transition-colors">
+              <Home className="h-4 w-4" />
+            </Link>
+            <ChevronRight className="h-4 w-4 text-gray-400" />
+            <span className="font-medium text-gray-900">{category.name}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">{category.name}</h1>
           <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">Discover top-rated professionals for your next project.</p>

@@ -26,7 +26,7 @@ export function CTABanner() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Link href="/create-gig">
+              <Link href="/create">
                 <button className="group relative px-8 py-4 bg-[#1dbf73] hover:bg-[#1dbf73]/90 text-white font-bold text-lg rounded-full shadow-lg shadow-[#1dbf73]/30 transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
                   Become a Seller
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

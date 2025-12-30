@@ -12,15 +12,15 @@ export interface LeanGig {
   status: 'pending' | 'approved' | 'rejected';
   isFeatured: boolean;
   favoritedBy: string[];
+  averageRating: number; // Add this
+  reviewCount: number;   // Add this
   createdAt: Date;
 }
 
 // Hàm tiện ích này tập trung logic xử lý Gigs trước khi gửi về client
 export function processGigsForClient(gigs: LeanGig[], userId?: string) {
   return gigs.map((gig: LeanGig) => {
-    const rating = (gig as any).rating || (Math.random() * (5 - 4.2) + 4.2).toFixed(1);
-    const ratingCount = (gig as any).ratingCount || Math.floor(Math.random() * 200) + 10;
-    const sales = (gig as any).sales || Math.floor(Math.random() * 500) + 20;
+    const sales = (gig as any).sales || Math.floor(Math.random() * 500) + 20; // You can keep mock sales for now
     const sellerLevels: ('New' | 'Level 1' | 'Level 2' | 'Top Rated')[] = ['Level 1', 'Level 2', 'Top Rated'];
     const randomLevel = sellerLevels[Math.floor(Math.random() * sellerLevels.length)];
     const isVerified = Math.random() > 0.5;
@@ -36,8 +36,8 @@ export function processGigsForClient(gigs: LeanGig[], userId?: string) {
         isVerified: isVerified,
       },
       isFavorited: userId ? gig.favoritedBy?.includes(userId) : false,
-      rating,
-      ratingCount,
+      rating: gig.averageRating, // Use real data
+      ratingCount: gig.reviewCount, // Use real data
       sales,
       deliveryTime: gig.deliveryTime,
       isNew,

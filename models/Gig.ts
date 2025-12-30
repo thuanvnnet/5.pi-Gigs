@@ -1,28 +1,44 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Document, Schema } from 'mongoose';
 
-const GigSchema = new Schema(
-  {
-    title: { type: String, required: true },
-    description: { type: String, required: true },
-    price: { type: Number, required: true },
-    deliveryTime: { type: Number, required: true },
-    category: { type: String, required: true },
-    image: { type: String, default: "/placeholder.svg" }, // Ảnh mặc định nếu không up
-    gallery: { type: [String], default: [] }, 
-    seller: {
-      username: { type: String, required: true },
-      uid: { type: String, required: true }, // Thêm UID để xác thực quyền sở hữu
-    },
-    rating: { type: Number, default: 0 },
-    reviewsCount: { type: Number, default: 0 },
-    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
-    isFeatured: { type: Boolean, default: false },
-    favoritedBy: { type: [String], default: [] }, // Mảng các user ID đã yêu thích
-  },
-  { timestamps: true } // Tự động lưu ngày tạo (createdAt)
-);
+export interface IGig extends Document {
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  image?: string;
+  gallery?: string[];
+  deliveryTime: number;
+  revisions: number;
+  features: string[];
+  seller: {
+    uid: string;
+    username: string;
+  };
+  status: 'pending' | 'approved' | 'rejected';
+  isFeatured: boolean;
+  favoritedBy: string[];
+  // --- ADD THESE FIELDS ---
+  averageRating: number;
+  reviewCount: number;
+  // ------------------------
+}
 
-// Nếu model đã tồn tại thì dùng lại, chưa thì tạo mới (Tránh lỗi khi Next.js chạy lại)
-const Gig = mongoose.models.Gig || mongoose.model("Gig", GigSchema);
+const GigSchema: Schema = new Schema({
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  category: { type: String, required: true, index: true },
+  price: { type: Number, required: true },
+  image: String,
+  gallery: [String],
+  deliveryTime: { type: Number, required: true },
+  revisions: { type: Number, default: 0 },
+  features: [String],
+  seller: { uid: String, username: String },
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
+  isFeatured: { type: Boolean, default: false, index: true },
+  favoritedBy: [{ type: String }],
+  averageRating: { type: Number, default: 0, min: 0, max: 5 },
+  reviewCount: { type: Number, default: 0 },
+}, { timestamps: true });
 
-export default Gig;
+export default mongoose.models.Gig || mongoose.model<IGig>('Gig', GigSchema);

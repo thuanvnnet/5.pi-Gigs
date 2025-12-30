@@ -2,6 +2,7 @@ import Link from "next/link"
 import connectDB from "@/lib/db"
 import mongoose from "mongoose"
 import Gig from "@/models/Gig"
+import Category from "@/models/Category"
 import { GigCard } from "@/components/gig/GigCard"
 import { processGigsForClient, LeanGig } from "@/lib/gig-utils"
 
@@ -22,8 +23,21 @@ async function getFeaturedGigs() {
         .limit(8)
         .lean() as LeanGig[];
 
-    // Sử dụng hàm tiện ích để xử lý dữ liệu
-    return processGigsForClient(gigs, userId);
+    // Lấy các slug danh mục duy nhất từ các gigs đã tìm thấy
+    const categorySlugs = [...new Set(gigs.map(gig => gig.category))];
+    // Tìm các danh mục tương ứng
+    const categories = await Category.find({ slug: { $in: categorySlugs } }).lean();
+    // Tạo một map để tra cứu tên danh mục từ slug nhanh chóng
+    const categoryMap = new Map(categories.map(cat => [cat.slug, cat.name]));
+
+    // Xử lý dữ liệu gigs cho client (ví dụ: kiểm tra trạng thái yêu thích)
+    const processedGigs = processGigsForClient(gigs, userId);
+
+    // Thêm tên danh mục vào mỗi gig
+    return processedGigs.map(gig => ({
+        ...gig,
+        categoryName: categoryMap.get(gig.category) || 'Uncategorized'
+    }));
 }
 
 export default async function FeaturedGigs() {
@@ -57,7 +71,7 @@ export default async function FeaturedGigs() {
       {/* GIGS GRID */}
       {gigs.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-          {gigs.map((gig) => <GigCard key={gig._id} gig={gig} isFavorited={gig.isFavorited} />)}
+          {gigs.map((gig: any) => <GigCard key={gig._id} gig={gig} isFavorited={gig.isFavorited} categoryName={gig.categoryName} />)}
         </div>
       )}
 

@@ -13,7 +13,17 @@ export interface IOrder extends Document {
   status: OrderStatus;
   deliveryFile?: string;
   deliveryNote?: string;
-  // ... các trường khác
+  autoCompleteAt?: Date;
+  expectedDeliveryAt?: Date;
+  revisionsCount: number;
+  disputeReason?: string;
+  cancellationReason?: string;
+  paidAt?: Date;
+  deliveredAt?: Date;
+  completedAt?: Date;
+  cancelledAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const OrderSchema = new Schema(
@@ -40,13 +50,14 @@ const OrderSchema = new Schema(
     deliveryFile: { type: String }, 
     deliveryNote: { type: String }, 
     autoCompleteAt: { type: Date }, // Mốc thời gian 72h
+    expectedDeliveryAt: { type: Date },
 
     // Yêu cầu sửa lại (Revision)
     revisionsCount: { type: Number, default: 0 },
 
     // Tranh chấp & Hoàn tiền
     disputeReason: { type: String },
-    refundReason: { type: String }, // Lý do Seller hủy đơn hoàn tiền
+    cancellationReason: { type: String },
 
     paidAt: { type: Date },      
     deliveredAt: { type: Date }, 
