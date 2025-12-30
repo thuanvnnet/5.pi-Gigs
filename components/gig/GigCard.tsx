@@ -102,7 +102,7 @@ export function GigCard({ gig, isFavorited, categoryName }: GigCardProps) {
                     <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                         <span className="font-bold">{gig.rating}</span>
-                        <span className="text-gray-400 text-xs">({gig.ratingCount})</span>
+                        <span className="text-gray-400 text-xs">({gig.ratingCount}) reviews</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs">
                         <ShoppingCart className="w-4 h-4 text-gray-400" />

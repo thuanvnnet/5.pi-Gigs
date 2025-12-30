@@ -16,8 +16,8 @@ async function getFeaturedGigs() {
     const session = await getSession();
     const userId = session.user?.id;
 
-    // Lấy 8 Gigs mới nhất đã được duyệt
-    const gigs = await Gig.find({ status: 'approved' })
+    // Lấy 8 Gigs nổi bật đã được duyệt
+    const gigs = await Gig.find({ status: 'approved', isFeatured: true })
         .sort({ createdAt: -1 })
         .limit(8)
         .lean() as LeanGig[];
@@ -34,8 +34,8 @@ export default async function FeaturedGigs() {
       {/* HEADER SECTION */}
       <div className="flex justify-between items-end mb-8">
         <div>
-           <h2 className="text-3xl font-bold text-gray-900 mb-2">Recently Added Gigs</h2>
-           <p className="text-gray-500">Most popular services on 5.pi Gigs this week.</p>
+           <h2 className="text-3xl font-bold text-gray-900 mb-2">Featured Gigs</h2>
+           <p className="text-gray-500">Hand-picked services with excellent quality and value.</p>
         </div>
         <Link href="/search" className="text-[#1dbf73] font-bold hover:underline hidden md:block">
           View All Gigs →
