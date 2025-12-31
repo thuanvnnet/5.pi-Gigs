@@ -1,0 +1,11 @@
+{
+  "ignores": [
+    "autoprefixer",
+    "postcss",
+    "tailwindcss",
+    "tailwindcss-animate",
+    "@types/node",
+    "typescript",
+    "@vercel/analytics"
+  ]
+}
