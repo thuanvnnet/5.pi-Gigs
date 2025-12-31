@@ -1,5 +1,5 @@
 import connectDB from "@/lib/db";
-import Favorite from "@/models/Favorite";
+import Favorite from "@/models/favorite";
 import { NextResponse } from "next/server";
 // import { getSessionUser } from "@/lib/auth";
 

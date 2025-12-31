@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useEffect, useState } from "react"
+import { use, useEffect, useState, useCallback } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
   const [order, setOrder] = useState<IOrder | null>(null)
   const [loading, setLoading] = useState(true)
   
+  const [fetchError, setFetchError] = useState<"auth" | "generic" | null>(null);
   // Form states
   const [deliveryLink, setDeliveryLink] = useState("")
   const [deliveryNote, setDeliveryNote] = useState("")
@@ -36,30 +37,33 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
   // Cấu hình giới hạn số lần sửa
   const MAX_REVISIONS = 3
 
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     try {
       const res = await fetch(`/api/orders/${id}`)
       if (!res.ok) {
-        // If response is not OK, throw an error to be caught by the catch block
-        throw new Error(`Failed to fetch order: ${res.statusText}`);
+        if (res.status === 403 || res.status === 401) {
+          throw new Error('auth');
+        }
+        throw new Error('generic');
       }
       const data = await res.json()
       if (data.success) {
         setOrder(data.data)
-        if (data.data.status === "delivered" && data.data.autoCompleteAt) {
-           calculateTimeLeft(new Date(data.data.autoCompleteAt))
-        }
       } else {
-        toast.error(data.error || "Could not load order details.");
+        throw new Error('generic');
       }
     } catch (error) {
-      console.error("Error fetching order:", error)
+      const type = (error as Error).message as typeof fetchError;
+      setFetchError(type);
+      if (type === 'generic') {
+        toast.error("Could not load order details.");
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
 
-  const calculateTimeLeft = (targetDate: Date) => {
+  const calculateTimeLeft = useCallback((targetDate: Date) => {
     const now = new Date().getTime()
     const totalDuration = 3 * 24 * 60 * 60 * 1000 
     const distance = targetDate.getTime() - now
@@ -75,20 +79,9 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
       setTimeLeft(`${days}d ${hours}h ${minutes}m`)
     }
-  }
+  }, [])
 
-  useEffect(() => {
-    if (order?.status === "delivered" && order.autoCompleteAt) {
-      const targetDate = new Date(order.autoCompleteAt);
-      calculateTimeLeft(targetDate); // Initial call to display time immediately
-      const timer = setInterval(() => calculateTimeLeft(targetDate), 10000);
-      return () => clearInterval(timer); // Cleanup on unmount
-    }
-  }, [order])
-
-  useEffect(() => { if (id) fetchOrder() }, [id])
-
-  const handleAction = async (payload: any) => {
+  const handleAction = useCallback(async (payload: any) => {
     setActionLoading(true)
     try {
       const res = await fetch(`/api/orders/${id}`, {
@@ -120,9 +113,90 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
     } finally {
       setActionLoading(false)
     }
-  }
+  }, [id, fetchOrder])
+
+  // --- Specific Action Handlers for better readability and structure ---
+  const handlePay = useCallback(() => {
+    handleAction({ action: "pay" });
+  }, [handleAction]);
+
+  const handleDeliver = useCallback(() => {
+    if (!deliveryLink) {
+      toast.warning("Please provide a delivery file link.");
+      return;
+    }
+    handleAction({ 
+      action: "deliver", 
+      deliveryFile: deliveryLink, 
+      deliveryNote: deliveryNote 
+    });
+  }, [handleAction, deliveryLink, deliveryNote]);
+
+  const handleRequestRevision = useCallback(() => {
+    if (!reasonInput) {
+      toast.warning("Please describe the changes you want.");
+      return;
+    }
+    handleAction({ action: "revision", disputeReason: reasonInput });
+  }, [handleAction, reasonInput]);
+
+  const handleSubmitReport = useCallback(() => {
+    if (!reasonInput) {
+      toast.warning("Please describe the issue in detail.");
+      return;
+    }
+    handleAction({ action: "dispute", disputeReason: reasonInput });
+  }, [handleAction, reasonInput]);
+
+  const handleRefund = useCallback(() => handleAction({ action: "refund" }), [handleAction]);
+
+  useEffect(() => {
+    if (order?.status === "delivered" && order.autoCompleteAt) {
+      const targetDate = new Date(order.autoCompleteAt);
+
+      const checkAndComplete = () => {
+        const now = new Date().getTime();
+        const distance = targetDate.getTime() - now;
+
+        if (distance < 0) {
+          // Check against the closed-over order status. This is safe because
+          // this effect is re-run when `order` changes, clearing the old timer.
+          if (order.status === 'delivered') {
+            handleAction({ action: "complete" });
+          }
+        } else {
+          calculateTimeLeft(targetDate);
+        }
+      };
+
+      checkAndComplete(); // Initial check for immediate UI update
+      const timer = setInterval(checkAndComplete, 10000); // Check every 10 seconds
+      
+      return () => clearInterval(timer); // Cleanup on unmount
+    }
+  }, [order, calculateTimeLeft, handleAction])
+
+  useEffect(() => { if (id) fetchOrder() }, [id, fetchOrder])
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1dbf73]"></div></div>
+  
+  if (fetchError === 'auth' || (order && user?.username !== order.buyerId && user?.username !== order.sellerId)) {
+    return (
+      <div className="min-h-screen bg-[#F7F9FB] font-sans">
+        <Header />
+        <main className="container mx-auto px-4 py-8 flex flex-col items-center justify-center text-center h-[60vh]">
+          <AlertTriangle className="w-16 h-16 text-red-400 mb-4" />
+          <h1 className="text-3xl font-bold text-gray-800">Access Denied</h1>
+          <p className="text-gray-500 mt-2 max-w-md">You do not have permission to view this order. Please log in with the correct account or return to the homepage.</p>
+          <Button asChild className="mt-6 bg-[#1dbf73] hover:bg-[#1dbf73]/90 text-white font-bold">
+            <a href="/">Go to Homepage</a>
+          </Button>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (!order) return <div className="min-h-screen flex items-center justify-center text-gray-500">Order not found</div>
 
   const isBuyer = user?.username === order.buyerId
@@ -223,8 +297,8 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
                            <span>Total Amount:</span>
                            <span className="text-xl font-bold text-gray-900">{order.price} π</span>
                         </div>
-                        <Button onClick={() => handleAction({ action: "pay" })} className="w-full bg-[#1dbf73] hover:bg-[#1dbf73]/90 text-white font-bold py-6 text-lg shadow-md transition-all hover:scale-[1.02]">
-                          Pay Securely with Pi
+                        <Button onClick={handlePay} disabled={actionLoading} className="w-full bg-[#1dbf73] hover:bg-[#1dbf73]/90 text-white font-bold py-6 text-lg shadow-md transition-all hover:scale-[1.02]">
+                          {actionLoading ? "Processing..." : "Pay Securely with Pi"}
                         </Button>
                         <p className="text-xs text-center text-gray-400">Funds will be held in Escrow until you approve the work.</p>
                       </div>
@@ -281,7 +355,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
                            <label className="text-sm font-bold text-gray-700 mb-1.5 block">Delivery Note</label>
                            <Textarea className="min-h-[120px] bg-gray-50" placeholder="Describe what you have done..." value={deliveryNote} onChange={(e) => setDeliveryNote(e.target.value)} />
                         </div>
-                        <Button onClick={() => handleAction({ action: "deliver", deliveryFile: deliveryLink, deliveryNote: deliveryNote })} disabled={!deliveryLink || actionLoading} className="w-full bg-[#1dbf73] hover:bg-[#1dbf73]/90 text-white font-bold py-6 text-lg shadow-md">
+                        <Button onClick={handleDeliver} disabled={!deliveryLink || actionLoading} className="w-full bg-[#1dbf73] hover:bg-[#1dbf73]/90 text-white font-bold py-6 text-lg shadow-md">
                           {actionLoading ? "Uploading..." : "Send Delivery"}
                         </Button>
                       </div>
@@ -375,7 +449,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
                            <Textarea className="bg-white mb-3" placeholder="What would you like the seller to change?" value={reasonInput} onChange={(e) => setReasonInput(e.target.value)} />
                            <div className="flex gap-2">
                              <Button onClick={() => setActiveForm(null)} variant="ghost" className="flex-1">Cancel</Button>
-                             <Button onClick={() => handleAction({ action: "revision", disputeReason: reasonInput })} className="flex-1 bg-blue-600 text-white font-bold">Send Request</Button>
+                             <Button onClick={handleRequestRevision} disabled={actionLoading || !reasonInput} className="flex-1 bg-blue-600 text-white font-bold">{actionLoading ? "Sending..." : "Send Request"}</Button>
                            </div>
                          </div>
                        )}
@@ -385,7 +459,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
                            <Textarea className="bg-white mb-3" placeholder="Describe the issue..." value={reasonInput} onChange={(e) => setReasonInput(e.target.value)} />
                            <div className="flex gap-2">
                              <Button onClick={() => setActiveForm(null)} variant="ghost" className="flex-1">Cancel</Button>
-                             <Button onClick={() => handleAction({ action: "dispute", disputeReason: reasonInput })} className="flex-1 bg-red-600 text-white font-bold">Submit Report</Button>
+                             <Button onClick={handleSubmitReport} disabled={actionLoading || !reasonInput} className="flex-1 bg-red-600 text-white font-bold">{actionLoading ? "Submitting..." : "Submit Report"}</Button>
                            </div>
                          </div>
                        )}
@@ -400,8 +474,8 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
                          <span className="font-bold block">Dispute in Progress</span>
                          <span className="text-sm">Buyer reported: "{order.disputeReason}". Admin will intervene shortly.</span>
                          {isSeller && (
-                            <Button onClick={() => handleAction({ action: "refund" })} className="mt-3 bg-white text-red-600 border border-red-200 hover:bg-red-50 w-full">
-                              Accept Fault & Refund
+                            <Button onClick={handleRefund} disabled={actionLoading} className="mt-3 bg-white text-red-600 border border-red-200 hover:bg-red-50 w-full">
+                              {actionLoading ? "Refunding..." : "Accept Fault & Refund"}
                             </Button>
                          )}
                        </div>
